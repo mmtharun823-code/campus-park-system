@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Smart Parking</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: linear-gradient(rgba(13, 17, 23, 0.5), rgba(13, 17, 23, 0.7)), url('bg.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .login-card {
+            background: rgba(22, 27, 34, 0.4);
+            /* Transparent glass view */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            /* Lighter glass edge */
+            border-radius: 16px;
+            padding: 3rem;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), #a371f7, var(--success));
+        }
+
+        .login-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            background: -webkit-linear-gradient(45deg, #fff, #a371f7);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-header p {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-family: var(--font-body);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(88, 166, 255, 0.2);
+        }
+
+        .btn-login {
+            width: 100%;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: var(--font-heading);
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: transform 0.2s, background 0.2s;
+            margin-top: 1rem;
+        }
+
+        .btn-login:hover {
+            background: #478dd6;
+            transform: translateY(-2px);
+        }
+
+        .error-msg {
+            color: var(--error);
+            font-size: 0.85rem;
+            margin-top: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>Security Gateway</h1>
+                <p>Campus Smart Parking ANPR System</p>
+            </div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="admin-id">Admin User ID</label>
+                    <input type="email" id="admin-id" placeholder="campuspark123@gmail.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="admin-pass">Access Password</label>
+                    <input type="password" id="admin-pass" placeholder="••••••••" required>
+                </div>
+
+                <div id="login-error" class="error-msg">Authentication Failed: Invalid ID or Password.</div>
+
+                <button type="submit" class="btn-login">Initialize System</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth } from './firebase-config.js';
+        import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const form = document.getElementById('login-form');
+        const errorElement = document.getElementById('login-error');
+        const btnLogin = form.querySelector('.btn-login');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('admin-id').value.trim();
+            const pass = document.getElementById('admin-pass').value;
+
+            btnLogin.textContent = 'Authenticating...';
+            btnLogin.disabled = true;
+            errorElement.style.display = 'none';
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+                console.log("Login success:", userCredential.user);
+                
+                // Track auth in session storage as a fallback, but rely on onAuthStateChanged
+                sessionStorage.setItem('isAdmin', 'true');
+                window.location.href = 'app.html';
+            } catch (err) {
+                console.error('Login error:', err.message);
+                
+                // Friendly error messages for common mistakes
+                let msg = "Authentication Failed. Please check your credentials.";
+                if (err.code === 'auth/invalid-credential') msg = "Invalid email or password.";
+                else if (err.code === 'auth/user-not-found') msg = "User account not found.";
+                else if (err.code === 'auth/wrong-password') msg = "Incorrect password.";
+                else if (err.code === 'auth/network-request-failed') {
+                    msg = "Network Error: Failed to reach Firebase. This might be due to a firewall, VPN, or the QUIC protocol. Try disabling QUIC in chrome://flags/#enable-quic";
+                }
+                
+                errorElement.textContent = msg;
+                errorElement.style.display = 'block';
+                btnLogin.textContent = 'Initialize System';
+                btnLogin.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>

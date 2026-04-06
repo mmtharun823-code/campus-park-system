@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading System...</title>
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0d1117, #161b22);
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+        }
+
+        /* Logo container */
+        .loader-box {
+            text-align: center;
+        }
+
+        /* Logo animation */
+        .logo {
+            width: 120px;
+            animation: zoomRotate 2s infinite ease-in-out;
+        }
+
+        /* Glow effect */
+        .glow {
+            color: #58a6ff;
+            font-size: 20px;
+            margin-top: 15px;
+            letter-spacing: 2px;
+            animation: blink 1.5s infinite;
+        }
+
+        /* Progress bar */
+        .progress {
+            width: 200px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #58a6ff, #a371f7);
+            animation: load 3s forwards;
+        }
+
+        /* Animations */
+        @keyframes zoomRotate {
+            0% {
+                transform: scale(0.8) rotate(0deg);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1) rotate(180deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(0.8) rotate(360deg);
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes load {
+            from {
+                width: 0%;
+            }
+
+            to {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="loader-box">
+        <!-- Replace with your logo -->
+        <img src="logo.png" class="logo" alt="Logo">
+
+        <div class="glow">Initializing Smart Parking...</div>
+
+        <div class="progress">
+            <div class="progress-bar"></div>
+        </div>
+    </div>
+
+    <script>
+        // Redirect after loading
+        setTimeout(() => {
+            window.location.href = "app.html";
+        }, 3000);
+    </script>
+
+</body>
+
+</html>

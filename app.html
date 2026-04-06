@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Smart Parking ANPR</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .text-logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #58a6ff, #a371f7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: bold;
+            color: white;
+            margin: auto;
+            animation: spinZoom 2.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loader" class="loader-overlay">
+        <div class="loader-content">
+
+            <div class="text-logo"></div>
+
+            <h3 class="glow-text">Initializing System...</h3>
+            <p id="loading-status">Connecting Camera...</p>
+
+            <div class="progress">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <header class="navbar">
+        <div class="logo">
+            <span class="logo-icon"></span>
+            <h1>Campus Smart Parking</h1>
+        </div>
+        <div class="nav-status">
+            <span class="status-dot"></span> System Online
+            <button id="btn-logout"
+                style="margin-left:15px; background:transparent; color:#f85149; border:1px solid #f85149; padding:4px 10px; border-radius:4px; cursor:pointer;">Logout</button>
+        </div>
+    </header>
+
+    <main class="dashboard">
+        <!-- Main Video / Image Feed -->
+        <section class="card feed-section">
+            <div class="card-header">
+                <h2>ANPR Scanner Feed</h2>
+                <div class="controls">
+                    <button id="btn-camera" class="btn primary">Web Camera</button>
+                    <!-- <button id="btn-usb" class="btn secondary">USB Camera</button> -->
+                    <label for="img-upload" class="btn secondary upload-btn">
+                        Upload Image
+                        <input type="file" id="img-upload" accept="image/*" hidden>
+                    </label>
+                </div>
+            </div>
+
+            <div class="feed-container">
+                <video id="video-element" autoplay playsinline muted></video>
+                <img id="image-element" style="display: none;">
+                <canvas id="overlay-canvas"></canvas>
+                <div class="scan-animation" id="scan-line"></div>
+                <div class="corner-brackets">
+                    <div class="bracket tl"></div>
+                    <div class="bracket tr"></div>
+                    <div class="bracket bl"></div>
+                    <div class="bracket br"></div>
+                </div>
+            </div>
+            <div class="feed-actions">
+                <div class="auto-scan-indicator">
+                    <span class="scanner-dot"></span>
+                    <span id="feed-status">Awaiting Input...</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Processing Steps & Results -->
+        <section class="results-layout">
+
+            <div class="card result-card">
+                <h2>Detection Result</h2>
+                <div id="result-box" class="result-box waiting">
+                    <div id="res-badge" class="badge">Awaiting Scan</div>
+                    <div class="plate-text" id="final-plate-txt">----</div>
+                    <div class="confidence" id="confidence-val">--% Confidence</div>
+                </div>
+
+                <div class="gate-controls">
+                    <div class="gate-visual">
+                        <div id="gate-icon" class="status-icon gate-closed"></div>
+                        <div class="gate-text">
+                            <span class="gate-label">Parking Gate Status</span>
+                            <strong id="gate-status">CLOSED</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="manual-entry">
+                    <p class="manual-label">Scan incorrect? Enter manually:</p>
+                    <div class="manual-input-group">
+                        <input type="text" id="manual-plate-input" placeholder="e.g. KA01AB1234" class="text-input"
+                            autocomplete="off">
+                        <select id="access-type" class="select-input">
+                            <option value="IN">Vehicle IN</option>
+                            <option value="OUT">Vehicle OUT</option>
+                        </select>
+                        <button id="btn-save-log" class="btn primary">Save Log</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card stats-card">
+                <h2>Real-time Stats</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Logs</span>
+                        <span id="total-logs" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Vehicles IN</span>
+                        <span id="in-count" class="stat-value text-success">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Vehicles OUT</span>
+                        <span id="out-count" class="stat-value text-error">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card logs-card">
+                <div class="card-header">
+                    <h2>Vehicle Access Logs</h2>
+                    <div class="header-controls">
+                        <input type="text" id="log-search" placeholder="Search plates..." class="search-input">
+                        <button id="btn-manage-vehicles" class="btn secondary">Manage Authorized Vehicles</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="access-table">
+                        <thead>
+                            <tr>
+                                <th>Plate Number</th>
+                                <th>Status</th>
+                                <th>Authorization</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="access-log-body">
+                            <!-- Logs dynamically appended here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Hidden Canvases for processing -->
+            <div style="display:none;">
+                <canvas id="canvas-crop"></canvas>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Authorized Vehicles Management Modal -->
+    <div id="vehicle-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Manage Authorized Vehicles</h2>
+                <span class="close" id="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="vehicle-form">
+                    <h3>Add New Vehicle</h3>
+                    <form id="add-vehicle-form">
+                        <div class="form-group">
+                            <label>Plate Number:</label>
+                            <input type="text" id="new-plate" placeholder="e.g. KA01AB1234, N82Y8388, ABC1234" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Owner Name:</label>
+                            <input type="text" id="owner-name" placeholder="e.g. John Doe" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Vehicle Type:</label>
+                            <select id="vehicle-type" required>
+                                <option value="Car">Car</option>
+                                <option value="Motorcycle">Motorcycle</option>
+                                <option value="Bus">Bus</option>
+                                <option value="Truck">Truck</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Department:</label>
+                            <input type="text" id="department" placeholder="e.g. Computer Science" required>
+                        </div>
+                        <button type="submit" class="btn primary">Add Vehicle</button>
+                    </form>
+                </div>
+                
+                <div class="vehicle-list">
+                    <h3>Current Authorized Vehicles</h3>
+                    <div class="table-container">
+                        <table class="vehicles-table">
+                            <thead>
+                                <tr>
+                                    <th>Plate Number</th>
+                                    <th>Owner Name</th>
+                                    <th>Type</th>
+                                    <th>Department</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vehicles-table-body">
+                                <!-- Vehicles dynamically loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Define onOpenCvReady globally before loading the library
+        window.onOpenCvReady = function() {
+            console.log("OpenCV script loaded (Initial signal)");
+            // If main script already set up the actual handler, call it
+            if (typeof window.onOpenCvReadyActual === 'function') {
+                window.onOpenCvReadyActual();
+            } else {
+                window.openCvIsWaiting = true;
+            }
+        };
+    </script>
+    <!-- Load OpenCV.js asynchronously -->
+    <script async src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady();"
+        type="text/javascript"></script>
+
+    <!-- Load Tesseract.js -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- Main app logic (ES Module — imports Firebase) -->
+    <script type="module" src="script.js"></script>
+
+</body>
+
+</html>
